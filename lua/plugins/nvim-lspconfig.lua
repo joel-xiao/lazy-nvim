@@ -20,21 +20,21 @@ return {
           init_options = {
             vue = {
               hybridMode = false,
-              format = {
-                enable = false, -- 彻底关闭 Vue 模板格式化
-              },
+              -- format = {
+              --   enable = false, -- 彻底关闭 Vue 模板格式化
+              -- },
             },
           },
-          -- 阻止自动注册格式化命令
-          commands = {
-            VueFormatDocument = false,
-            VueFormatSelection = false,
-          },
-          -- 关键配置：禁用所有格式化功能
-          capabilities = {
-            documentFormattingProvider = false,
-            documentRangeFormattingProvider = false,
-          },
+          -- -- 阻止自动注册格式化命令
+          -- commands = {
+          --   VueFormatDocument = false,
+          --   VueFormatSelection = false,
+          -- },
+          -- -- 关键配置：禁用所有格式化功能
+          -- capabilities = {
+          --   documentFormattingProvider = false,
+          --   documentRangeFormattingProvider = false,
+          -- },
         },
 
         -- HTML
@@ -42,18 +42,18 @@ return {
           filetypes = { "html", "vue" },
         },
 
-        -- CSS/SCSS
-        cssls = {
-          filetypes = { "css", "scss", "vue" },
-          settings = {
-            css = {
-              validate = true,
-            },
-            scss = {
-              validate = true,
-            },
-          },
-        },
+        -- -- CSS/SCSS
+        -- cssls = {
+        --   filetypes = { "css", "scss", "vue" },
+        --   settings = {
+        --     css = {
+        --       validate = true,
+        --     },
+        --     scss = {
+        --       validate = true,
+        --     },
+        --   },
+        -- },
 
         -- JavaScript/TypeScript
         tsserver = {
