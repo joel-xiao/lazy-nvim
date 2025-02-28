@@ -2,15 +2,15 @@ return {
   {
     "neovim/nvim-lspconfig",
     opts = {
-
-     -- setup = {
-     --    defaults = {
-     --      capabilities = {
-     --        documentFormattingProvider = false,
-     --        documentRangeFormattingProvider = false
-     --      }
-     --    }
-     --  },
+      --
+      -- setup = {
+      --   defaults = {
+      --     capabilities = {
+      --       documentFormattingProvider = false,
+      --       documentRangeFormattingProvider = false,
+      --     },
+      --   },
+      -- },
 
       -- 不再需要 ensure_installed 字段
       servers = {
@@ -39,26 +39,27 @@ return {
 
         -- HTML
         html = {
-          filetypes = { "html", "vue" },
+          filetypes = { "html" },
         },
 
-        -- -- CSS/SCSS
-        -- cssls = {
-        --   filetypes = { "css", "scss", "vue" },
-        --   settings = {
-        --     css = {
-        --       validate = true,
-        --     },
-        --     scss = {
-        --       validate = true,
-        --     },
-        --   },
-        -- },
+        -- CSS/SCSS
+        cssls = {
+          filetypes = { "css", "scss" },
+          settings = {
+            css = {
+              validate = true,
+            },
+            scss = {
+              validate = true,
+            },
+          },
+        },
 
         -- JavaScript/TypeScript
         tsserver = {
+          filetypes = { "js", "ts" },
           root_dir = function()
-            return vim.loop.cwd()
+            return vim.fn.getcwd()
           end,
           single_file_support = false,
           settings = {
@@ -70,7 +71,7 @@ return {
 
         -- Emmet 支持
         emmet_ls = {
-          filetypes = { "html", "css", "scss", "vue" },
+          filetypes = { "html", "css", "scss" },
         },
       },
     },
