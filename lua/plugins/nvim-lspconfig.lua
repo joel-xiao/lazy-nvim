@@ -57,7 +57,6 @@ return {
 
         -- JavaScript/TypeScript
         tsserver = {
-          filetypes = { "js", "ts" },
           root_dir = function()
             return vim.fn.getcwd()
           end,
@@ -72,6 +71,14 @@ return {
         -- Emmet 支持
         emmet_ls = {
           filetypes = { "html", "css", "scss" },
+          init_options = {
+            html = {
+              options = {
+                -- 对单标签使用自闭合标签
+                ["bem.enabled"] = true,
+              },
+            },
+          },
         },
       },
     },
