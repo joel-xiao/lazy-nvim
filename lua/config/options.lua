@@ -8,3 +8,12 @@ vim.g.maplocalleader = "\\"
 
 -- LazyVim auto format
 vim.g.autoformat = false
+
+-- if the completion engine supports the AI source,
+-- use that instead of inline suggestions
+vim.g.ai_cmp = false
+
+-- set to `true` to follow the main branch
+-- you need to have a working rust toolchain to build the plugin
+-- in this case.
+vim.g.lazyvim_blink_main = true
