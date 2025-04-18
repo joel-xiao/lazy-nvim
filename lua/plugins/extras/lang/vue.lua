@@ -5,35 +5,26 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
+        -- Vue 3 使用 volar
         volar = {
+          enabled = true,  -- 启用 Vue 3 项目使用 volar
           init_options = {
             vue = {
               hybridMode = true,  -- 启用 hybridMode 支持 Vue 的 <script> 和 <template>
             },
           },
         },
-        -- tsserver 插件禁用，确保只使用 volar
-        vtsls = {},
+
+        -- Vue 2 使用 vls
+        vls = {
+          enabled = true,  -- 启用 Vue Language Server
+        },
+
+        -- 确保 tsserver 插件启用，支持 JavaScript 和 TypeScript 提示
+        tsserver = {
+          enabled = true,  -- 启用 tsserver 插件
+        },
       },
     },
-  },
-
-  -- 配置 tsserver 插件，确保 tsserver 支持 Vue 文件，且不会与 volar 冲突
-  {
-    "neovim/nvim-lspconfig",
-    opts = function(_, opts)
-      -- 确保 tsserver 支持 vue 文件
-      table.insert(opts.servers.vtsls.filetypes, "vue")
-      -- 添加 Vue TypeScript 插件配置
-      LazyVim.extend(opts.servers.vtsls, "settings.vtsls.tsserver.globalPlugins", {
-        {
-          name = "@vue/typescript-plugin",
-          location = LazyVim.get_pkg_path("vue-language-server", "/node_modules/@vue/language-server"),
-          languages = { "vue" },
-          configNamespace = "typescript",
-          enableForWorkspaceTypeScriptVersions = true,
-        },
-      })
-    end,
   },
 }
