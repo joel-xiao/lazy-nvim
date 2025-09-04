@@ -12,6 +12,12 @@ vim.g.python3_host_prog = 'path/to/venv/bin/python'
 vim.g.autoformat = false
 vim.b.autoformat = false
 
+vim.opt.guifont = {
+  "JetBrainsMonoNL Nerd Font Propo:h14",
+  "JetBrainsMono Nerd Font:h14",
+  "JetBrains Mono:h14"
+}
+
 -- if the completion engine supports the AI source,
 -- use that instead of inline suggestions
 -- vim.g.ai_cmp = false
