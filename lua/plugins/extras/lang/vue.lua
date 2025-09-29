@@ -9,7 +9,7 @@ return {
       -- @type lspconfig.options
       servers = {
         vuels = {
-          filetypes = { "vue" },
+          filetypes = { "vue", 'javascript', 'javascriptreact' },
           init_options = {
             vue = {
               target = nil,
