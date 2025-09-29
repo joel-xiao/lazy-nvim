@@ -1,4 +1,10 @@
-vim.g.python3_host_prog = 'path/to/venv/bin/python'
+vim.g.python3_host_prog = '~/.venvs/myenv/bin/python'
+vim.api.nvim_create_autocmd("VimEnter", {
+  once = true,
+  callback = function()
+    print("Neovim 当前用的 Python 环境：" .. vim.g.python3_host_prog)
+  end
+})
 
 -- Options are automatically loaded before lazy.nvim startup
 -- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
