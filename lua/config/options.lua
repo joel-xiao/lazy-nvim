@@ -32,3 +32,6 @@ vim.opt.guifont = {
 -- you need to have a working rust toolchain to build the plugin
 -- in this case.
 vim.g.lazyvim_blink_main = true
+
+-- 修复浮窗 / 图片偏移问题(禁用 noice.nvim 内置的 “WezTerm 偏移补偿” 逻辑)
+vim.g.noice_no_wezterm_hack = true
