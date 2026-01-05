@@ -1,13 +1,48 @@
 -- =========================================
 -- lazy.nvim 配置：Opencode.nvim 全栈 + 排除依赖/构建目录
--- 官方推荐方式（无需 setup()）
 -- =========================================
 local uv = vim.loop
 local json_decode = vim.fn.json_decode
 
--- 1️⃣ 读取 .cursorrules（系统提示词）
+-- ==============================
+-- 1️⃣ 自动查找项目根（包含 opencode.json 的目录）
+-- ==============================
+local function find_project_root(start_dir)
+  start_dir = start_dir or uv.cwd()
+  local dir = start_dir
+  while dir do
+    local candidate = dir .. "/opencode.json"
+    if uv.fs_stat(candidate) then
+      return dir
+    end
+    local parent = dir:match("^(.*)/[^/]+$")
+    if parent == dir then break end
+    dir = parent
+  end
+  return uv.cwd() -- 找不到就用当前目录
+end
+
+local project_root = find_project_root()
+
+-- 切换 Neovim CWD 到项目根
+vim.cmd("cd " .. project_root)
+
+-- ==============================
+-- 2️⃣ 端口检查函数
+-- ==============================
+local function is_port_open(port)
+  local handle = io.popen("lsof -i :" .. port .. " -t")
+  if not handle then return false end
+  local result = handle:read("*a")
+  handle:close()
+  return result ~= ""
+end
+
+-- ==============================
+-- 3️⃣ 读取 .cursorrules（系统提示词）
+-- ==============================
 local function load_cursorrules()
-  local path = vim.fn.getcwd() .. "/.cursorrules"
+  local path = project_root .. "/.cursorrules"
   if uv.fs_stat(path) then
     local f = io.open(path, "r")
     if f then
@@ -16,7 +51,7 @@ local function load_cursorrules()
       return content
     end
   end
-  -- 默认全栈系统提示词
+  -- 默认系统提示
   return [[
 你是全栈资深工程师，精通 Vue/JS、React/JSX/TSX、Java、Go、Node.js、Rust、Lua 及各类数据库。
 遵循最佳实践，代码风格统一，空值显示 '--'。
@@ -26,69 +61,84 @@ local function load_cursorrules()
 end
 local system_prompt = load_cursorrules()
 
--- 2️⃣ 读取 opencode.json（项目可选配置）
+-- ==============================
+-- 4️⃣ 读取 opencode.json（项目可选配置）
+-- ==============================
 local function load_project_json()
-  local path = vim.fn.getcwd() .. "/opencode.json"
+  local path = project_root .. "/opencode.json"
   if uv.fs_stat(path) then
     local f = io.open(path, "r")
     if f then
       local data = f:read("*a")
       f:close()
-      return json_decode(data)
+      local ok, decoded = pcall(json_decode, data)
+      if ok and type(decoded) == "table" then
+        return decoded
+      else
+        vim.notify("Failed to parse opencode.json", vim.log.levels.WARN)
+      end
     end
   end
-  return nil
+  return {}
 end
 local project_config = load_project_json()
 
--- 3️⃣ 递归读取 RAG 上下文（排除依赖和构建目录）
-local function read_context_files(paths)
-  local texts = {}
-  local exts = "%.(ts|tsx|vue|js|jsx|java|go|rs|lua|json|sql|db)$"
-  local ignore_dirs = { "node_modules", "vendor", "target", ".git", ".idea", ".venv", "__pycache__", "dist", "build", "out" }
+-- ==============================
+-- 5️⃣ 递归读取 RAG 上下文（排除依赖和构建目录）
+-- ==============================
+local rag_context = ""
+if project_config.contextFiles then
+  local function read_context_files(paths)
+    local texts = {}
+    local exts = "%.(ts|tsx|vue|js|jsx|java|go|rs|lua|json|sql|db)$"
+    local ignore_dirs = { "node_modules", "vendor", "target", ".git", ".idea", ".venv", "__pycache__", "dist", "build", "out" }
 
-  local function is_ignored(path)
-    for _, d in ipairs(ignore_dirs) do
-      if path:find("/" .. d .. "/") then
-        return true
+    local function is_ignored(path)
+      for _, d in ipairs(ignore_dirs) do
+        if path:find("/" .. d .. "/") then
+          return true
+        end
       end
+      return false
     end
-    return false
-  end
 
-  local function scan_dir(dir)
-    local handle = uv.fs_scandir(dir)
-    if not handle then return end
-    while true do
-      local name, typ = uv.fs_scandir_next(handle)
-      if not name then break end
-      local path = dir .. "/" .. name
-      if not is_ignored(path) then
-        if typ == "file" and path:match(exts) then
-          local f = io.open(path, "r")
-          if f then
-            table.insert(texts, f:read("*a"))
-            f:close()
+    local function scan_dir(dir)
+      local handle = uv.fs_scandir(dir)
+      if not handle then return end
+      while true do
+        local name, typ = uv.fs_scandir_next(handle)
+        if not name then break end
+        local path = dir .. "/" .. name
+        if not is_ignored(path) then
+          if typ == "file" and path:match(exts) then
+            local f = io.open(path, "r")
+            if f then
+              table.insert(texts, f:read("*a"))
+              f:close()
+            end
+          elseif typ == "directory" then
+            scan_dir(path)
           end
-        elseif typ == "directory" then
-          scan_dir(path) -- 递归
         end
       end
     end
-  end
 
-  for _, p in ipairs(paths or {}) do
-    local full_path = vim.fn.getcwd() .. "/" .. p
-    if uv.fs_stat(full_path) then
-      scan_dir(full_path)
+    for _, p in ipairs(paths or {}) do
+      local full_path = project_root .. "/" .. p
+      if uv.fs_stat(full_path) then
+        scan_dir(full_path)
+      end
     end
+
+    return table.concat(texts, "\n")
   end
 
-  return table.concat(texts, "\n")
+  rag_context = read_context_files(project_config.contextFiles)
 end
-local rag_context = read_context_files(project_config and project_config.contextFiles)
 
--- 4️⃣ 默认 prompts（全栈 + 数据）
+-- ==============================
+-- 6️⃣ 默认 prompts
+-- ==============================
 local default_prompts = {
   default      = "请根据当前项目生成代码。",
   code_review  = "请审查以下代码，指出潜在问题和优化建议。",
@@ -102,15 +152,16 @@ local default_prompts = {
   architecture = "请分析系统架构，提出优化、扩展和性能改进方案。",
   database     = "请分析数据库设计，提出优化建议和规范化方案。",
 }
-local prompts = (project_config and project_config.prompts) or default_prompts
+local prompts = project_config.prompts or default_prompts
 
--- 5️⃣ 返回 lazy.nvim 配置
+-- ==============================
+-- 7️⃣ 返回 lazy.nvim 配置
+-- ==============================
 return {
   {
     "NickvanDyke/opencode.nvim",
     dependencies = { "folke/snacks.nvim" },
     config = function()
-      -- 官方推荐全局配置
       vim.g.opencode_opts = {
         systemPrompt = system_prompt,
         context      = rag_context,
@@ -118,27 +169,28 @@ return {
         modelConfig  = {
           provider    = "gemini3 Pro",
           apiUrl      = "https://api.gemini3pro.com/v1/chat",
-          apiKey      = "YOUR_API_KEY_HERE",
+          apiKey      = "",
           model       = "gemini-3pro",
           temperature = 0.7,
           maxTokens   = 2048,
         },
       }
 
-      -- 快捷键：打开对话框
+      -- 快捷键
       vim.keymap.set("n", "<leader>oa", function()
         require("opencode").toggle()
       end, { desc = "OpenCode: Toggle dialog" })
 
-      -- 快捷键：使用当前 buffer 提问
       vim.keymap.set("n", "<leader>oq", function()
         require("opencode").ask("@this: ", { submit = true })
       end, { desc = "OpenCode: Ask current buffer" })
 
-      -- 快捷键：选择操作
       vim.keymap.set("n", "<leader>os", function()
         require("opencode").select()
       end, { desc = "OpenCode: Select action" })
     end,
   },
 }
+
+
+
