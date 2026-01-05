@@ -24,8 +24,6 @@ return {
         prompts = default_prompts,
       }
 
-      vim.o.autoread = true
-
       vim.keymap.set({ "n", "x" }, "<leader>oa", function()
         require("opencode").ask("@this: ", { submit = true })
       end, { desc = "Ask opencode" })
